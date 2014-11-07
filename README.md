@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/crowbar/barclamp-pacemaker.png?branch=release/roxy/master)](https://travis-ci.org/crowbar/barclamp-pacemaker)
+[![Build Status](https://travis-ci.org/aspiers/cookbook-pacemaker.png)](https://travis-ci.org/aspiers/cookbook-pacemaker)
 
 DESCRIPTION
 ===========
