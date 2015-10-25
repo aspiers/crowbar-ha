@@ -1,2 +1,5 @@
 Gemfile.lock
 tmp/
+/berks-cookbooks/
+Berksfile.lock
+/.bundle/config
