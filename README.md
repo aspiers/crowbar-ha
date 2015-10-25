@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/crowbar/barclamp-pacemaker.png?branch=release/roxy/master)](https://travis-ci.org/crowbar/barclamp-pacemaker)
+[![Build Status](https://travis-ci.org/aspiers/cookbook-pacemaker.png)](https://travis-ci.org/aspiers/cookbook-pacemaker)
 
 DESCRIPTION
 ===========
@@ -75,9 +75,8 @@ To limit the run to certain tests, add a `focus` key to the example:
 License and Author
 ==================
 
-Author:: Robert Choi <taeilchoi1@gmail.com>
-
-Copyright:: 2013 Robert Choi
+Copyright:: 2013 Robert Choi <taeilchoi1 at gmail.com>
+Copyright:: 2014 SUSE LINUX Products GmbH, Nuernberg, Germany
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
