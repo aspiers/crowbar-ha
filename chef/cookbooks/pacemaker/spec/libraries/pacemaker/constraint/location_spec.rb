@@ -19,7 +19,7 @@ describe Pacemaker::Constraint::Location do
   end
 
   def fields
-    %w(name rsc score node)
+    %w(name rsc score lnode)
   end
 
   it_should_behave_like "a CIB object"
@@ -56,7 +56,7 @@ EOF
     end
 
     it "should parse the node" do
-      expect(@parsed.node).to eq(fixture.node)
+      expect(@parsed.lnode).to eq(fixture.lnode)
     end
   end
 end

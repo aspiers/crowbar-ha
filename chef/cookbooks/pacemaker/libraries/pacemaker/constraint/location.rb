@@ -3,10 +3,10 @@ require_relative "../constraint"
 class Pacemaker::Constraint::Location < Pacemaker::Constraint
   register_type :location
 
-  attr_accessor :rsc, :score, :node
+  attr_accessor :rsc, :score, :lnode
 
   def self.attrs_to_copy_from_chef
-    %w(rsc score node)
+    %w(rsc score lnode)
   end
 
   def parse_definition
@@ -20,10 +20,10 @@ class Pacemaker::Constraint::Location < Pacemaker::Constraint
     self.name  = $1
     self.rsc   = $2
     self.score = $3
-    self.node  = $4
+    self.lnode  = $4
   end
 
   def definition_string
-    "#{self.class.object_type} #{name} #{rsc} #{score}: #{node}"
+    "#{self.class.object_type} #{name} #{rsc} #{score}: #{lnode}"
   end
 end
