@@ -40,7 +40,7 @@ module Chef::RSpec
       # if it outputted the given strings on STDOUT and STDERR and
       # exited with the given exit code.
       def shellout_double(command:, stdout: "", stderr: "", exitstatus: 0)
-        shellout = double(::Mixlib::ShellOut)
+        shellout = instance_double(::Mixlib::ShellOut)
         expect(shellout).to receive(:environment).and_return({})
         expect(shellout).to receive(:run_command)
         allow(shellout).to receive(:stdout).and_return(stdout)

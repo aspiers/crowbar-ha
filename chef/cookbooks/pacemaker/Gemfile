@@ -4,8 +4,7 @@ source "https://rubygems.org"
 gem "rake"
 
 group :test, :development do
-  gem "chefspec", "~> 3.0"
-  gem "rspec-expectations", "~> 2.14.0"
+  gem "chefspec", "~> 4.4.0" #, github: "sethvargo/chefspec", branch: "master"
 end
 
 group :development do
