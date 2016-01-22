@@ -21,46 +21,23 @@
 # attributes, so every node can configure its per_node STONITH resource. This
 # will always work fine: as all nodes need to be up for the proposal to be
 # applied, all nodes will be able to configure their own STONITH resource.
-node[:pacemaker][:stonith][:per_node][:mode] = "self"
+#
+# The only exception is the remote nodes, which can't setup resources. So we
+# kindly ask the founder node to deal with configuring their STONITH resources.
+if CrowbarPacemakerHelper.is_cluster_founder?(node)
+  node_list = [node[:hostname]]
+  remotes = CrowbarPacemakerHelper.remote_nodes(node).map { |n| n[:hostname] }
+  node_list.concat(remotes)
+
+  node[:pacemaker][:stonith][:per_node][:mode] = "list"
+  node[:pacemaker][:stonith][:per_node][:list] = node_list
+else
+  node[:pacemaker][:stonith][:per_node][:mode] = "self"
+end
 
 case node[:pacemaker][:stonith][:mode]
 when "sbd"
-  sbd_devices = nil
-  sbd_devices ||= (node[:pacemaker][:stonith][:sbd][:nodes][node[:fqdn]][:devices] rescue nil)
-  sbd_devices ||= (node[:pacemaker][:stonith][:sbd][:nodes][node[:hostname]][:devices] rescue nil)
-
-  sbd_devices.each do |sbd_device|
-    if File.symlink?(sbd_device)
-      sbd_device_simple = File.expand_path(File.readlink(sbd_device), File.dirname(sbd_device))
-    else
-      sbd_device_simple = sbd_device
-    end
-    disks = BarclampLibrary::Barclamp::Inventory::Disk.all(node).select { |d| d.name == sbd_device_simple }
-    disk = disks.first
-    if disk.nil?
-      # This is not a disk; let's see if this is a partition and deal with it
-      sbd_sys_dir = "/sys/class/block/#{File.basename(sbd_device_simple)}"
-      if File.exists?("#{sbd_sys_dir}/partition") && File.symlink?(sbd_sys_dir)
-        sbd_sys_dir_full = File.expand_path(File.readlink(sbd_sys_dir), File.dirname(sbd_sys_dir))
-        # sbd_sys_dir_full is something like
-        # "/sys/devices/platform/host3/session2/target3:0:0/3:0:0:0/block/sda/sda1",
-        # and we want to get the "sda" part of this
-        parent_sys_dir_full = sbd_sys_dir_full[1..sbd_sys_dir_full.rindex("/")-1]
-        parent_disk = "/dev/#{File.basename(parent_sys_dir_full)}"
-        disks = BarclampLibrary::Barclamp::Inventory::Disk.all(node).select { |d| d.name == parent_disk }
-        disk = disks.first
-      end
-    end
-    if disk.nil?
-      raise "Cannot find device #{sbd_device}!"
-    end
-    if disk.claimed? && disk.owner != "sbd"
-      raise "Cannot use #{sbd_device} for SBD: it was claimed for #{disk.owner}!"
-    end
-    unless disk.claim("sbd")
-      raise "Cannot claim #{sbd_device} for SBD!"
-    end
-  end
+  include_recipe "crowbar-pacemaker::sbd"
 
 # Need to add the hostlist param for shared
 when "shared"
@@ -76,7 +53,10 @@ when "shared"
     raise message
   end
 
-  member_names = CrowbarPacemakerHelper.cluster_nodes(node).map { |n| n.name }
+  all_nodes = CrowbarPacemakerHelper.cluster_nodes(node) + \
+    CrowbarPacemakerHelper.remote_nodes(node)
+
+  member_names = all_nodes.map { |n| n.name }
   params["hostlist"] = member_names.join(" ")
 
   node.default[:pacemaker][:stonith][:shared][:params] = params
@@ -102,7 +82,10 @@ when "ipmi_barclamp"
   node.default[:pacemaker][:stonith][:per_node][:agent] = "external/ipmi"
   node.default[:pacemaker][:stonith][:per_node][:nodes] = {}
 
-  CrowbarPacemakerHelper.cluster_nodes(node).each do |cluster_node|
+  all_nodes = CrowbarPacemakerHelper.cluster_nodes(node) + \
+    CrowbarPacemakerHelper.remote_nodes(node)
+
+  all_nodes.each do |cluster_node|
     unless cluster_node.key?("ipmi") && cluster_node[:ipmi][:bmc_enable]
       message = "Node #{cluster_node[:hostname]} has no IPMI configuration from IPMI barclamp; another STONITH method must be used."
       Chef::Log.fatal(message)
@@ -128,7 +111,10 @@ when "libvirt"
   hypervisor_ip = node[:pacemaker][:stonith][:libvirt][:hypervisor_ip]
   hypervisor_uri = "qemu+tcp://#{hypervisor_ip}/system"
 
-  CrowbarPacemakerHelper.cluster_nodes(node).each do |cluster_node|
+  all_nodes = CrowbarPacemakerHelper.cluster_nodes(node) + \
+    CrowbarPacemakerHelper.remote_nodes(node)
+
+  all_nodes.each do |cluster_node|
     manufacturer = cluster_node[:dmi][:system][:manufacturer] rescue "unknown"
     unless %w(Bochs QEMU).include? manufacturer
       message = "Node #{cluster_node[:hostname]} does not seem to be running in libvirt."
